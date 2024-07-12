@@ -1,0 +1,217 @@
+(defwidget bar0 []
+  (box :class "bar"
+    (centerbox :orientation "h"
+      (clock)
+      (workspaces0)
+      (buttons)
+    )
+  )
+)
+
+(defwidget bar1 []
+  (box :class "bar"
+    (centerbox :orientation "h"
+      (workspaces1)
+      (clock)
+      (sidestuff)))
+)
+
+(defwidget sidestuff []
+  (box :class "sidestuff" :orientation "h" :space-evenly false :halign "end" :spacing 10
+    (stray)
+    (metric :label volume
+         :value volumeNum 
+         :onchange "")   
+    (net)
+  ))
+
+(deflisten workspace0
+"scripts/workspace.sh 0")
+
+(defwidget workspaces0 []
+  (box :orientation "h" :halign "center" 
+  (literal :content workspace0))
+  )
+
+; (deflisten workspace1
+;   "scripts/workspace.sh 1")
+
+; (defwidget workspaces1 []
+  ;   (literal :content workspace1))
+
+
+
+(defwidget buttons []
+  (box :class ""
+    :orientation "h"
+    :space-evenly true 
+    :halign "end"
+    (buttonsContainer)
+    (sidestuff)
+  ))
+
+
+(defwidget buttonsContainer []
+  (box :class "buttonsRight"
+    :orientation "h"
+    :space-evenly false 
+    :halign "center"
+    :spacing 6
+    
+  (button
+    :class "onedriveButton buttonStyle"
+    :onclick "scripts/updateOnedrive.sh  notification"
+    onedriveStatus
+  )
+
+  (updates)
+
+  ;; (metric :label " "
+  ;;         :value {EWW_CPU.avg}
+  ;;         :onchange "")   
+    
+   (label :text "󰢮 ${EWW_TEMPS.AMDGPU_EDGE}°" :class "buttonStyle orange")
+   (label :text " ${EWW_TEMPS.K10TEMP_TCTL}°" :class "buttonStyle yellow")
+   (circularProgress :value {EWW_CPU.avg} :label "󰓅 " :onclick "")
+  )
+)
+
+(defwidget circularProgress [value label onclick]
+  (box :class "circular no-style" :vexpand "false" :hexpand "false" :space-evenly true 
+    (circular-progress 
+      :value value 
+      :start-at 75
+      :thickness 4
+      :class "barCircular"
+    )
+
+    (button 
+      :class "iconCircular no-style"
+      ;:show_truncated false
+      :onclick {onclick != ""}
+      ;:limit-width 2
+      label
+    )
+  )
+)
+
+(defwidget clock []
+  (box :class "clock"
+    :orientation "h"
+    :space-evenly false
+    :halign "start"
+    :spacing 6
+    (button
+      :class "clockb"
+      :onclick "scripts/calendar.sh show"
+    date-time)
+
+    (music)
+    
+  ))
+
+(defwidget music []
+  (box :class "music buttonStyle"
+    :orientation "h"
+    :space-evenly false
+    :halign "start"
+    
+    (button
+      :class ""
+    currentMusic)
+  )
+)
+
+(defwidget updates []
+  (box
+    :class "${matches(arch-updates, '^\s*$')?'paru-empty':'paru'}"
+    :orientation "h"
+    :space-evenly false
+    :halign "end"
+    :spacing 10
+    (button
+      :class "buttonStyle"
+      :onclick "foot bash -c 'paru; ~/.config/eww/scripts/arch-updates.sh Refresh'&"
+    arch-updates)
+  ))
+
+(defwidget net []
+  (box :class "net"
+    :orientation "h"
+    :space-evenly false
+    :halign "end"
+    :spacing 10
+    (button
+      :class "" :onclick "scripts/network.sh ShowInfo"
+    network)
+  ))
+
+(defwidget stray []
+  (systray :class "systray"
+    :space-evenly false
+    :halign "end"
+    :spacing 5
+    :icon-size 18
+  ))
+
+(defpoll network :interval "5s"
+"scripts/network.sh")
+
+(defpoll arch-updates :interval "60s"
+"scripts/arch-updates.sh")
+
+(defpoll volume :interval "4s"
+"scripts/volumecontrol")
+
+(defpoll volumeNum :interval "4s"
+  "amixer get Master | grep '%' | head -n 1 | cut -d '[' -f 2 | cut -d '%' -f 1
+")
+
+(defpoll currentMusic :interval "10s"
+  "echo   $(playerctl metadata title | cut -c 1-50)
+")
+
+(defpoll onedriveStatus :interval "90s"
+  "sh scripts/updateOnedrive.sh")
+
+(defpoll date-time :interval "1s"
+"scripts/date-time.sh")
+
+(defwindow bar0
+  :monitor 0
+  :windowtype "dock"
+  :geometry (geometry :x "0%"
+    :y "0%"
+    :width "100%"
+    :height "20px"
+  :anchor "top center")
+  :stacking "bg"
+  :exclusive true
+  :focusable false
+  (bar0))
+
+(defwindow bar1
+  :monitor 1
+  :windowtype "dock"
+  :geometry (geometry :x "0%"
+    :y "0px"
+    :width "100%"
+    :height "0&"
+  :anchor "top center")
+  :stacking "bottom"
+  :exclusive true
+  :focusable false
+  (bar1))
+
+
+(defwidget metric [label value onchange]
+  (box :orientation "h"
+       :class "metric"
+       :space-evenly false
+    (box :class "label" label)
+    (scale :min 0
+           :max 101
+           :active {onchange != ""}
+           :value value
+           :onchange onchange)))
+
